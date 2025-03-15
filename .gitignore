@@ -1,5 +1,6 @@
 .env
-
+*.db
+!dev.db
 
 # Added by cargo
 
