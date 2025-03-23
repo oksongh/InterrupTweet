@@ -1,7 +1,8 @@
 .env
 *.db
 !dev.db
-
+*.db-wal
+*.db-shm
 # Added by cargo
 
 /target
