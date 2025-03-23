@@ -1,4 +1,4 @@
-use std::convert::Infallible;
+use std::{convert::Infallible, env};
 
 use hyper::{
     service::{make_service_fn, service_fn},
@@ -13,12 +13,10 @@ async fn handle_request(_req: Request<Body>) -> Result<Response<Body>, Infallibl
 async fn main() -> Result<(), sqlx::Error> {
     println!("Hello, world!");
 
-    let pool = SqlitePool::connect("sqlite://dev.db").await?;
-    sqlx::query("INSERT INTO users (name, at_id) VALUES (?, ?)")
-        .bind("Alice")
-        .bind("alicedesu")
-        .execute(&pool)
-        .await?;
+    dotenvy::dotenv().ok();
+    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    let pool = SqlitePool::connect(&db_url).await?;
 
     let rows = sqlx::query("SELECt id, name, at_id FROM users")
         .fetch_all(&pool)

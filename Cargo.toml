@@ -7,4 +7,4 @@ edition = "2021"
 tokio = { version = "1", features = ["full"] }
 hyper = { version = "0.14", features = ["full"] }
 sqlx = { version = "0.8.3", features = ["runtime-tokio", "sqlite"] }
-dotenv = "0.15.0"
+dotenvy = "0.15.0"
