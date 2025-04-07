@@ -1,4 +1,9 @@
-use std::{env, path::Path};
+mod endpoints {
+    pub mod tweets;
+    pub mod users;
+}
+
+use std::env;
 
 use axum::{
     extract::State,
@@ -10,12 +15,9 @@ use axum::{
 
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use sqlx::{migrate::Migrator, Row, SqlitePool};
-use tokio::net::TcpListener;
 
-#[cfg(test)]
-use once_cell::sync::Lazy;
+use sqlx::{Row, SqlitePool};
+use tokio::net::TcpListener;
 
 async fn hello_tweet() -> String {
     "Hello".to_string()
@@ -122,63 +124,6 @@ async fn test_create_new_user_birthday_invalid(pool: SqlitePool) {
     assert_eq!(response.into_response().status(), StatusCode::BAD_REQUEST);
 }
 
-#[derive(Deserialize)]
-struct NewTweet {
-    user_id: i64,
-    content: String,
-}
-
-async fn create_new_tweet(
-    State(pool): State<SqlitePool>,
-    Json(NewTweet { content, user_id }): Json<NewTweet>,
-) -> Json<String> {
-    let result = sqlx::query!(
-        "INSERT INTO tweets (user_id, content) VALUES (?, ?)",
-        user_id,
-        content
-    )
-    .execute(&pool)
-    .await;
-
-    match result {
-        Ok(_) => Json("Tweet created successfully".to_string()),
-        Err(_) => Json("Failed to tweet".to_string()),
-    }
-}
-
-#[cfg(test)]
-static MIGRATOR: Lazy<String> = Lazy::new(|| {
-    dotenvy::dotenv().ok();
-    env::var("MIGRATIONS_DIR").expect("MIGRATIONS_PATH must be set")
-});
-
-#[tokio::test]
-async fn test_create_new_tweet() {
-    let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
-
-    let migrator = Migrator::new(Path::new(&*MIGRATOR)).await.unwrap();
-    migrator.run(&pool).await.unwrap();
-
-    sqlx::query!(
-        "INSERT INTO users (id, name, at_id) VALUES (?, ?, ?)",
-        1,
-        "TestUser",
-        "TestUser",
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
-
-    let new_tweet = NewTweet {
-        user_id: 1,
-        content: "hello".to_string(),
-    };
-
-    let response = create_new_tweet(State(pool), Json(new_tweet)).await;
-
-    assert_eq!(response.0, "Tweet created successfully");
-}
-
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
     println!("Hello, world!");
@@ -198,10 +143,10 @@ async fn main() -> Result<(), sqlx::Error> {
         let at_id: String = row.get("at_id");
         println!("{id},{name},{at_id}");
     }
-
+    use endpoints::*;
     let app = Router::new()
         .route("/", get(hello_tweet))
-        .route("/tweet", post(create_new_tweet))
+        .route("/tweet", post(tweets::create_new_tweet))
         .route("/user", post(create_new_user))
         .with_state(pool);
 
