@@ -1,4 +1,9 @@
-use axum::{extract::State, Json};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
 use serde::Deserialize;
 use sqlx::SqlitePool;
 
@@ -23,6 +28,30 @@ pub async fn create_new_tweet(
     match result {
         Ok(_) => Json("Tweet created successfully".to_string()),
         Err(_) => Json("Failed to tweet".to_string()),
+    }
+}
+#[derive(serde::Serialize)]
+pub struct Tweet {
+    id: i64,
+    user_id: i64,
+    content: String,
+}
+
+pub async fn get_tweets(
+    State(pool): State<SqlitePool>,
+    Path(user_id): Path<i64>,
+) -> impl IntoResponse {
+    let result = sqlx::query_as!(
+        Tweet,
+        "SELECT id, user_id, content FROM tweets WHERE user_id = ?",
+        user_id
+    )
+    .fetch_all(&pool)
+    .await;
+
+    match result {
+        Ok(tweets) => Json(tweets).into_response(),
+        Err(_) => StatusCode::NOT_FOUND.into_response(),
     }
 }
 #[cfg(test)]

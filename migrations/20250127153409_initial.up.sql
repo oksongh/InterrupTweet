@@ -8,7 +8,7 @@ CREATE TABLE users (
 );
 
 CREATE TABLE tweets (
-    id TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL,
     content TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,

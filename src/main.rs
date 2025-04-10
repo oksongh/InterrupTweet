@@ -6,15 +6,9 @@ mod endpoints {
 use std::env;
 
 use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
     routing::{get, post},
-    Json, Router,
+    Router,
 };
-
-use chrono::NaiveDate;
-use serde::{Deserialize, Serialize};
 
 use sqlx::{Row, SqlitePool};
 use tokio::net::TcpListener;
@@ -46,7 +40,8 @@ async fn main() -> Result<(), sqlx::Error> {
     let app = Router::new()
         .route("/", get(hello_tweet))
         .route("/tweet", post(tweets::create_new_tweet))
-        .route("/user", post(create_new_user))
+        .route("/tweet/{:id}", get(tweets::get_tweets))
+        .route("/user", post(users::create_new_user).get(users::get_users))
         .with_state(pool);
 
     let addr: std::net::SocketAddr = ([127, 0, 0, 1], 8080).into();
