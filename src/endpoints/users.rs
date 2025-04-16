@@ -19,8 +19,8 @@ pub struct NewUser {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct User {
-    id: i64,
-    name: String,
+    user_id: i64,
+    handle_name: String,
     at_id: String,
     birthday: Option<String>,
 }
@@ -59,9 +59,9 @@ pub async fn create_new_user(
     let result = sqlx::query_as!(
         User,
         r#"
-        INSERT INTO users (name, at_id, birthday)
+        INSERT INTO users (handle_name, at_id, birthday)
         VALUES (?,?,?)
-        RETURNING id,name, at_id, birthday
+        RETURNING user_id, handle_name, at_id, birthday
         "#,
         name,
         at_id,
@@ -87,7 +87,7 @@ pub async fn get_user_by_id(
 ) -> impl IntoResponse {
     let result = sqlx::query_as!(
         User,
-        "SELECT id, name, at_id, birthday FROM users WHERE id = ?",
+        "SELECT user_id, handle_name, at_id, birthday FROM users WHERE user_id = ?",
         id
     )
     .fetch_one(&pool)
@@ -101,9 +101,12 @@ pub async fn get_user_by_id(
 
 /// get all users
 pub async fn get_users(State(pool): State<SqlitePool>) -> impl IntoResponse {
-    let result = sqlx::query_as!(User, "SELECT id, name, at_id, birthday FROM users")
-        .fetch_all(&pool)
-        .await;
+    let result = sqlx::query_as!(
+        User,
+        "SELECT user_id, handle_name, at_id, birthday FROM users"
+    )
+    .fetch_all(&pool)
+    .await;
 
     match result {
         Ok(users) => (StatusCode::OK, Json(users)).into_response(),
@@ -183,7 +186,7 @@ mod tests {
 
         let body = res.into_body().collect().await.unwrap().to_bytes();
         let user: User = serde_json::from_slice(&body).unwrap();
-        assert_eq!(user.name, "TestUser");
+        assert_eq!(user.handle_name, "TestUser");
         assert_eq!(user.at_id, "test_user");
         assert_eq!(user.birthday, Some("2023-01-01".to_string()));
     }

@@ -33,7 +33,7 @@ pub async fn create_new_tweet(
 }
 #[derive(serde::Serialize)]
 pub struct Tweet {
-    id: i64,
+    tweet_id: i64,
     user_id: i64,
     content: String,
 }
@@ -44,7 +44,7 @@ pub async fn get_tweets(
 ) -> impl IntoResponse {
     let result = sqlx::query_as!(
         Tweet,
-        "SELECT id, user_id, content FROM tweets WHERE user_id = ?",
+        "SELECT tweet_id, user_id, content FROM tweets WHERE user_id = ?",
         user_id
     )
     .fetch_all(&pool)
@@ -85,7 +85,7 @@ mod tests {
         migrator.run(&pool).await.unwrap();
 
         sqlx::query!(
-            "INSERT INTO users (id, name, at_id) VALUES (?, ?, ?)",
+            "INSERT INTO users (user_id, handle_name, at_id) VALUES (?, ?, ?)",
             1,
             "TestUser",
             "TestUser",
