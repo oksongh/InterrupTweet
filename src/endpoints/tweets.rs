@@ -9,12 +9,12 @@ use serde::Deserialize;
 use sqlx::{Pool, Sqlite, SqlitePool};
 
 #[derive(Deserialize)]
-pub struct NewTweet {
+struct NewTweet {
     user_id: i64,
     content: String,
 }
 
-pub async fn create_new_tweet(
+async fn create_new_tweet(
     State(pool): State<SqlitePool>,
     Json(NewTweet { content, user_id }): Json<NewTweet>,
 ) -> Json<String> {
@@ -31,17 +31,15 @@ pub async fn create_new_tweet(
         Err(_) => Json("Failed to tweet".to_string()),
     }
 }
+
 #[derive(serde::Serialize)]
-pub struct Tweet {
+struct Tweet {
     tweet_id: i64,
     user_id: i64,
     content: String,
 }
 
-pub async fn get_tweets(
-    State(pool): State<SqlitePool>,
-    Path(user_id): Path<i64>,
-) -> impl IntoResponse {
+async fn get_tweets(State(pool): State<SqlitePool>, Path(user_id): Path<i64>) -> impl IntoResponse {
     let result = sqlx::query_as!(
         Tweet,
         "SELECT tweet_id, user_id, content FROM tweets WHERE user_id = ?",

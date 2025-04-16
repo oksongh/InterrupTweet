@@ -18,7 +18,7 @@ pub struct NewUser {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct User {
+struct User {
     user_id: i64,
     handle_name: String,
     at_id: String,
@@ -29,7 +29,7 @@ pub struct User {
 // r : (statuscode::, json<array<user>>) ,fail(statuscode::not_found, json<string>)
 // u : (statuscode, json<string>)
 // d : (statuscode, json<string>)
-pub async fn create_new_user(
+async fn create_new_user(
     State(pool): State<SqlitePool>,
     Json(NewUser {
         name,
@@ -81,10 +81,7 @@ pub async fn create_new_user(
 }
 
 /// get user by id
-pub async fn get_user_by_id(
-    State(pool): State<SqlitePool>,
-    Path(id): Path<i64>,
-) -> impl IntoResponse {
+async fn get_user_by_id(State(pool): State<SqlitePool>, Path(id): Path<i64>) -> impl IntoResponse {
     let result = sqlx::query_as!(
         User,
         "SELECT user_id, handle_name, at_id, birthday FROM users WHERE user_id = ?",
@@ -100,7 +97,7 @@ pub async fn get_user_by_id(
 }
 
 /// get all users
-pub async fn get_users(State(pool): State<SqlitePool>) -> impl IntoResponse {
+async fn get_users(State(pool): State<SqlitePool>) -> impl IntoResponse {
     let result = sqlx::query_as!(
         User,
         "SELECT user_id, handle_name, at_id, birthday FROM users"
