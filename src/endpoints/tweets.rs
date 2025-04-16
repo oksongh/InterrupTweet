@@ -2,10 +2,11 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
-    Json,
+    routing::{get, post},
+    Json, Router,
 };
 use serde::Deserialize;
-use sqlx::SqlitePool;
+use sqlx::{Pool, Sqlite, SqlitePool};
 
 #[derive(Deserialize)]
 pub struct NewTweet {
@@ -54,6 +55,13 @@ pub async fn get_tweets(
         Err(_) => StatusCode::NOT_FOUND.into_response(),
     }
 }
+
+pub fn app() -> Router<Pool<Sqlite>> {
+    Router::new()
+        .route("/tweet", post(create_new_tweet))
+        .route("/tweet/{:id}", get(get_tweets))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -39,10 +39,8 @@ async fn main() -> Result<(), sqlx::Error> {
     use endpoints::*;
     let app = Router::new()
         .route("/", get(hello_tweet))
-        .route("/tweet", post(tweets::create_new_tweet))
-        .route("/tweet/{:id}", get(tweets::get_tweets))
-        .route("/user", post(users::create_new_user).get(users::get_users))
-        .route("/user/{id}", get(users::get_user_by_id))
+        .merge(tweets::app())
+        .merge(users::app())
         .with_state(pool);
 
     let addr: std::net::SocketAddr = ([127, 0, 0, 1], 8080).into();

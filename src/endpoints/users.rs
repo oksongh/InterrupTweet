@@ -115,7 +115,7 @@ pub async fn get_users(State(pool): State<SqlitePool>) -> impl IntoResponse {
     }
 }
 
-fn app() -> Router<Pool<Sqlite>> {
+pub fn app() -> Router<Pool<Sqlite>> {
     Router::new()
         .route("/user", post(create_new_user).get(get_users))
         .route("/user/{:id}", get(get_user_by_id))
