@@ -9,12 +9,14 @@ dependencies = [
  "axum",
  "chrono",
  "dotenvy",
+ "http-body-util",
  "hyper 0.14.32",
  "once_cell",
  "serde",
  "serde_json",
  "sqlx",
  "tokio",
+ "tower",
 ]
 
 [[package]]
