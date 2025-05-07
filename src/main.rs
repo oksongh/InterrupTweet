@@ -2,8 +2,9 @@ mod endpoints {
     pub mod tweets;
     pub mod users;
 }
-mod repository;
-mod usecases;
+pub mod domain;
+pub mod repository;
+pub mod usecases;
 
 use std::env;
 

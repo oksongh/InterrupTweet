@@ -2,8 +2,8 @@ use axum::extract::State;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 
-use crate::repository;
 use crate::usecases::fatal_error::FatalError;
+use crate::{domain, repository};
 
 #[derive(Serialize, Deserialize, Debug, thiserror::Error)]
 pub enum CreateTweetError {
@@ -28,6 +28,22 @@ impl NewTweet {
             replay_to,
             content,
         }
+    }
+
+    pub fn into(
+        Self {
+            user_id,
+            replay_to,
+            content,
+        }: Self,
+    ) -> domain::tweets::Tweet {
+        domain::tweets::Tweet::new(
+            0, // TODO: set tweet_id
+            user_id,
+            content,
+            replay_to,
+            "".to_string(), // TODO: set created_at
+        )
     }
 }
 
