@@ -5,30 +5,34 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use serde::Deserialize;
+
 use sqlx::{Pool, Sqlite, SqlitePool};
 
-#[derive(Deserialize)]
-struct NewTweet {
-    user_id: i64,
-    content: String,
+use crate::usecases;
+use crate::usecases::common::FatalError;
+
+impl IntoResponse for FatalError {
+    fn into_response(self) -> axum::response::Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(self.0.to_string())).into_response()
+    }
 }
 
-async fn create_new_tweet(
-    State(pool): State<SqlitePool>,
-    Json(NewTweet { content, user_id }): Json<NewTweet>,
-) -> Json<String> {
-    let result = sqlx::query!(
-        "INSERT INTO tweets (user_id, content) VALUES (?, ?)",
-        user_id,
-        content
-    )
-    .execute(&pool)
-    .await;
+impl IntoResponse for usecases::tweets::CreateTweetError {
+    fn into_response(self) -> axum::response::Response {
+        (StatusCode::BAD_REQUEST, Json(self.to_string())).into_response()
+    }
+}
 
-    match result {
-        Ok(_) => Json("Tweet created successfully".to_string()),
-        Err(_) => Json("Failed to tweet".to_string()),
+// TODO: -> Result<Result<Json<String>, impl IntoResponse>, ~~anyhow::Error~~ custom error>>
+async fn post_tweet(
+    State(pool): State<SqlitePool>,
+    Json(new_tweet): Json<usecases::tweets::NewTweet>,
+) -> Result<impl IntoResponse, FatalError> {
+    println!("post_tweet");
+
+    match usecases::tweets::create_new_tweet(new_tweet, State(pool)).await? {
+        Ok(_) => Ok(Json("Tweet created successfully".to_string()).into_response()),
+        Err(e) => Ok(e.into_response()),
     }
 }
 
@@ -55,17 +59,24 @@ async fn get_tweets(State(pool): State<SqlitePool>, Path(user_id): Path<i64>) ->
 }
 
 pub fn app() -> Router<Pool<Sqlite>> {
-    Router::new()
-        .route("/tweet", post(create_new_tweet))
-        .route("/tweet/{:id}", get(get_tweets))
+    let api_route = Router::new()
+        .route("/", post(post_tweet))
+        .route("/{:id}", get(get_tweets));
+
+    Router::new().nest("/tweet", api_route)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::{
+        body::Body,
+        http::{Method, Request},
+    };
     use once_cell::sync::Lazy;
     use sqlx::{migrate::Migrator, SqlitePool};
     use std::env;
+    use tower::ServiceExt;
 
     #[cfg(test)]
     static MIGRATOR: Lazy<String> = Lazy::new(|| {
@@ -92,13 +103,34 @@ mod tests {
         .await
         .unwrap();
 
-        let new_tweet = NewTweet {
-            user_id: 1,
-            content: "hello".to_string(),
-        };
+        let new_tweet = usecases::tweets::NewTweet::new(1, None, "hello".to_string());
 
-        let response = create_new_tweet(State(pool), Json(new_tweet)).await;
+        let response = post_tweet(State(pool), Json(new_tweet))
+            .await
+            .unwrap()
+            .into_response();
 
-        assert_eq!(response.0, "Tweet created successfully");
+        assert_eq!(response.status(), StatusCode::OK);
     }
+
+    // #[sqlx::test(migrations = "./migrations")]
+    // async fn test_reply_to_tweet(pool: SqlitePool) {
+    //     let app = app().with_state(pool);
+    //     let req = Request::builder()
+    //         .method(Method::POST)
+    //         .uri("/tweet")
+    //         .header("content-type", "application/json")
+    //         .body(Body::from(
+    //             serde_json::to_string(&serde_json::json!({
+    //                 "user_id": 1,
+    //                 "replay_to": 2,
+    //                 "content": "hello",
+    //             }))
+    //             .unwrap(),
+    //         ))
+    //         .unwrap();
+
+    //     let response = app.oneshot(req).await.unwrap();
+    //     assert_eq!(response.status(), StatusCode::OK);
+    // }
 }

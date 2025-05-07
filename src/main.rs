@@ -2,6 +2,8 @@ mod endpoints {
     pub mod tweets;
     pub mod users;
 }
+mod repository;
+mod usecases;
 
 use std::env;
 
@@ -26,16 +28,6 @@ async fn main() -> Result<(), sqlx::Error> {
 
     let pool: SqlitePool = SqlitePool::connect(&db_url).await?;
 
-    let rows = sqlx::query("SELECt id, name, at_id FROM users")
-        .fetch_all(&pool)
-        .await?;
-
-    for row in rows {
-        let id: i32 = row.get("id");
-        let name: String = row.get("name");
-        let at_id: String = row.get("at_id");
-        println!("{id},{name},{at_id}");
-    }
     use endpoints::*;
     let app = Router::new()
         .route("/", get(hello_tweet))
