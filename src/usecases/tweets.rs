@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 
 use crate::repository;
-use crate::usecases::common::FatalError;
+use crate::usecases::fatal_error::FatalError;
 
 #[derive(Serialize, Deserialize, Debug, thiserror::Error)]
 pub enum CreateTweetError {

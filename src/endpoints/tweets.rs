@@ -9,13 +9,7 @@ use axum::{
 use sqlx::{Pool, Sqlite, SqlitePool};
 
 use crate::usecases;
-use crate::usecases::common::FatalError;
-
-impl IntoResponse for FatalError {
-    fn into_response(self) -> axum::response::Response {
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(self.0.to_string())).into_response()
-    }
-}
+use crate::usecases::fatal_error::FatalError;
 
 impl IntoResponse for usecases::tweets::CreateTweetError {
     fn into_response(self) -> axum::response::Response {
