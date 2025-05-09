@@ -5,8 +5,11 @@ use uuid::Uuid;
 #[serde(transparent)]
 pub struct UserId(Uuid);
 impl UserId {
-    pub fn value(&self) -> Uuid {
-        self.0
+    pub fn new() -> Self {
+        Self(Uuid::now_v7())
+    }
+    pub fn value(&self) -> &Uuid {
+        &self.0
     }
 }
 
@@ -39,7 +42,7 @@ impl User {
         birthday: Option<chrono::NaiveDate>,
     ) -> Self {
         Self {
-            user_id: UserId(Uuid::now_v7()),
+            user_id: UserId::new(),
             handle_name,
             at_id,
             birthday,

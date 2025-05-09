@@ -13,3 +13,37 @@ pub async fn tweet_exists(
 
     Ok(exists)
 }
+
+pub async fn save_tweet(
+    tweet: &domain::tweets::Tweet,
+    pool: &SqlitePool,
+) -> Result<(), FatalError> {
+    let domain::tweets::Tweet {
+        tweet_id,
+        user_id,
+        content,
+        replay_to,
+        created_at,
+    } = tweet;
+
+    let tweet_id = tweet_id.value().to_string();
+    let user_id = user_id.value().to_string();
+    let replay_to = replay_to.as_ref().map(|id| id.value().to_string());
+
+    // RETURNING tweet_id, user_id, content
+    sqlx::query!(
+        r#"
+        INSERT INTO tweets (tweet_id, user_id, content, replay_to, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        "#,
+        tweet_id,
+        user_id,
+        content,
+        replay_to,
+        created_at
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}

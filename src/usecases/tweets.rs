@@ -22,6 +22,17 @@ pub struct NewTweet {
     content: String,
 }
 impl NewTweet {
+    pub fn new(
+        user_id: domain::users::UserId,
+        replay_to: Option<domain::tweets::TweetId>,
+        content: String,
+    ) -> Self {
+        Self {
+            user_id,
+            replay_to,
+            content,
+        }
+    }
     pub fn into(
         Self {
             user_id,
@@ -34,45 +45,32 @@ impl NewTweet {
 }
 
 pub async fn create_new_tweet(
-    NewTweet {
-        content,
-        user_id,
-        replay_to,
-    }: NewTweet,
+    new_tweet: NewTweet,
     State(pool): State<SqlitePool>,
 ) -> Result<Result<(), CreateTweetError>, FatalError> {
     // validate input
+    let NewTweet {
+        user_id,
+        replay_to,
+        content,
+    } = &new_tweet;
 
     if content.len() > 280 {
         return Ok(Err(CreateTweetError::ContentTooLong));
     }
 
     // check if user exists
-    if !repository::users::user_exists(user_id, &pool).await? {
+    if !repository::users::user_exists(&user_id, &pool).await? {
         return Ok(Err(CreateTweetError::UserNotFound));
     };
 
     // check if replay_to tweet exists
-    if let Some(replay_to) = replay_to {
+    if let Some(replay_to) = &replay_to {
         if !repository::tweets::tweet_exists(replay_to, &pool).await? {
             return Ok(Err(CreateTweetError::ReplayToTweetNotFound));
         }
     }
-
-    // RETURNING tweet_id, user_id, content
-    sqlx::query!(
-        r#"
-        INSERT INTO tweets (user_id, replay_to, content)
-        VALUES (?, ?, ?)
-        "#,
-        user_id,
-        replay_to,
-        content
-    )
-    .execute(&pool)
-    .await?;
-
-    println!("aaa");
+    repository::tweets::save_tweet(&NewTweet::into(new_tweet), &pool).await?;
 
     Ok(Ok(()))
     // let a = result.map_err(|_| anyhow::anyhow!("Failed to create tweet").into());

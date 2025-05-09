@@ -7,8 +7,11 @@ use super::users::UserId;
 #[serde(transparent)]
 pub struct TweetId(Uuid);
 impl TweetId {
-    pub fn value(&self) -> Uuid {
-        self.0
+    pub fn new() -> Self {
+        Self(Uuid::now_v7())
+    }
+    pub fn value(&self) -> &Uuid {
+        &self.0
     }
 }
 
@@ -28,7 +31,7 @@ impl Tweet {
         replay_to: Option<TweetId>,
     ) -> Self {
         Self {
-            tweet_id: TweetId(Uuid::now_v7()),
+            tweet_id: TweetId::new(),
             user_id,
             content,
             replay_to,
