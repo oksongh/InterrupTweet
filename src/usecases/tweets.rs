@@ -17,19 +17,11 @@ pub enum CreateTweetError {
 
 #[derive(Deserialize)]
 pub struct NewTweet {
-    user_id: i64,
-    replay_to: Option<i64>,
+    user_id: domain::users::UserId,
+    replay_to: Option<domain::tweets::TweetId>,
     content: String,
 }
 impl NewTweet {
-    pub fn new(user_id: i64, replay_to: Option<i64>, content: String) -> Self {
-        Self {
-            user_id,
-            replay_to,
-            content,
-        }
-    }
-
     pub fn into(
         Self {
             user_id,
@@ -37,13 +29,7 @@ impl NewTweet {
             content,
         }: Self,
     ) -> domain::tweets::Tweet {
-        domain::tweets::Tweet::new(
-            0, // TODO: set tweet_id
-            user_id,
-            content,
-            replay_to,
-            "".to_string(), // TODO: set created_at
-        )
+        domain::tweets::Tweet::generate_new_tweet(user_id, content, replay_to)
     }
 }
 
@@ -68,12 +54,10 @@ pub async fn create_new_tweet(
 
     // check if replay_to tweet exists
     if let Some(replay_to) = replay_to {
-        if !tweet_exists(replay_to, &pool).await? {
+        if !repository::tweets::tweet_exists(replay_to, &pool).await? {
             return Ok(Err(CreateTweetError::ReplayToTweetNotFound));
         }
     }
-
-    println!("aaaab");
 
     // RETURNING tweet_id, user_id, content
     sqlx::query!(
@@ -97,13 +81,4 @@ pub async fn create_new_tweet(
     //     Ok(_) => Ok(Ok(())),
     //     Err(_) => Err(anyhow::anyhow!("Failed to create tweet").into()),
     // }
-}
-
-pub async fn tweet_exists(tweet_id: i64, pool: &SqlitePool) -> Result<bool, FatalError> {
-    let exists = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM tweets WHERE tweet_id = ?)")
-        .bind(tweet_id)
-        .fetch_one(pool)
-        .await?;
-
-    Ok(exists)
 }
