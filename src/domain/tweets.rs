@@ -1,9 +1,10 @@
+use derive_more::{From, FromStr};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use super::users::UserId;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, From, FromStr)]
 #[serde(transparent)]
 pub struct TweetId(Uuid);
 impl TweetId {
@@ -25,6 +26,22 @@ pub struct Tweet {
 }
 
 impl Tweet {
+    pub fn new(
+        tweet_id: TweetId,
+        user_id: UserId,
+        content: String,
+        replay_to: Option<TweetId>,
+        created_at: chrono::DateTime<chrono::Utc>,
+    ) -> Self {
+        Self {
+            tweet_id,
+            user_id,
+            content,
+            replay_to,
+            created_at,
+        }
+    }
+
     pub fn generate_new_tweet(
         user_id: UserId,
         content: String,

@@ -8,8 +8,8 @@ use axum::{
 
 use sqlx::{Pool, Sqlite, SqlitePool};
 
-use crate::usecases;
-use crate::usecases::fatal_error::FatalError;
+use crate::{domain::users::UserId, usecases::fatal_error::FatalError};
+use crate::{repository, usecases};
 
 impl IntoResponse for usecases::tweets::CreateTweetError {
     fn into_response(self) -> axum::response::Response {
@@ -37,14 +37,11 @@ struct Tweet {
     content: String,
 }
 
-async fn get_tweets(State(pool): State<SqlitePool>, Path(user_id): Path<i64>) -> impl IntoResponse {
-    let result = sqlx::query_as!(
-        Tweet,
-        "SELECT tweet_id, user_id, content FROM tweets WHERE user_id = ?",
-        user_id
-    )
-    .fetch_all(&pool)
-    .await;
+async fn get_tweets(
+    State(pool): State<SqlitePool>,
+    Path(user_id): Path<UserId>,
+) -> impl IntoResponse {
+    let result = repository::tweets::find_tweets_by_user_id(&user_id, &pool).await;
 
     match result {
         Ok(tweets) => Json(tweets).into_response(),
